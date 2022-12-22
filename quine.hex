@@ -44,6 +44,22 @@
 
 # >>>>>>>>>>>>>>>>>>>>>> PROGRAM SEGMENT <<<<<<<<<<<<<<<<<<<<<<
 
+# ------------ Requirements for this to work ------------
+
+#  - `rip` instructions will come as an 8-bit unsigned-integer, therefore
+# a dec to hex "function" will be needed (`rip` is read using a ModR/M with offset)
+
+#  - ELF header and program headers (maybe even section headers) must be
+# written to the output as well (in hex encoding)
+
+#  - comments need to be written somewhere in memory as the "compiling" of the
+# program disregards anything else
+
+# ------------ Things to make it harder ------------ 
+
+#  - only use what it is in memory for extracting what to write to the output
+# file
+
 b8 01 00 00 00          # 80 mov eax, 0x1
 bb 06 00 00 00          # 85 mov ebx, 0x05
 cd 80                   # 8a int 0x80 
