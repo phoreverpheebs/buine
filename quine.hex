@@ -32,36 +32,47 @@
 # >>>>>>>>>>>>>>>>>>>>>> PROGRAM HEADER <<<<<<<<<<<<<<<<<<<<<<
 
 01 00 00 00             # 40 p_type: segment type; PT_LOAD
-05 00 00 00             # 44 p_flags: 'rx'
+            07 00 00 00 # 44 p_flags: 'rwx'
 80 00 00 00 00 00 00 00 # 48 p_offset: file image offset
 80 00 40 00 00 00 00 00 # 50 p_vaddr: virtual address
 80 00 40 00 00 00 00 00 # 58 p_paddr: physical address
-0c 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
-0c 00 00 00 00 00 00 00 # 68 p_memsz: size in memory
-00 01 00 00 00 00 00 00 # 70 p_align: segment alignment: 16 bytes
+4c 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
+80 08 50 00 00 00 00 00 # 68 p_memsz: size in memory
+00 01 00 00 00 00 00 00 # 70 p_align: segment alignment: 128 bytes
 
 00 00 00 00 00 00 00 00 # 78
 
 # >>>>>>>>>>>>>>>>>>>>>> PROGRAM SEGMENT <<<<<<<<<<<<<<<<<<<<<<
 
-# ------------ Requirements for this to work ------------
+# buffer: 0x400100
 
-#  - `rip` instructions will come as an 8-bit unsigned-integer, therefore
-# a dec to hex "function" will be needed (`rip` is read using a ModR/M with offset)
+fc                      # 80 cld
 
-#  - ELF header and program headers (maybe even section headers) must be
-# written to the output as well (in hex encoding)
+e8 2d 00 00 00          # 81 call +0x32
+b0 3e                   # 86 mov al, 0x3e
+b9 16 00 00 00          # 88 mov ecx, 22
+bf 00 01 40 00          # 8d mov edi, 0x400100
+f3 aa                   # 92 rep stos
 
-#  - comments need to be written somewhere in memory as the "compiling" of the
-# program disregards anything else
+b8 04 00 00 00          # 94 mov eax, 4
+bb 01 00 00 00          # 99 mov ebx, 1
+b9 00 01 40 00          # 9e mov ecx, 0x400100
+ba 16 00 00 00          # a3 mov edx, 1
+cd 80                   # a8 int 0x80
 
-# ------------ Things to make it harder ------------ 
+b8 01 00 00 00          # aa mov eax, 0x1
+31 db                   # af xor ebx, ebx
+cd 80                   # b1 int 0x80 
 
-#  - only use what it is in memory for extracting what to write to the output
-# file
+# start_comment         # b3
+b8 04 00 00 00          # b3 mov eax, 4
+bb 01 00 00 00          # b8 mov ebx, 1
+b9 ca 00 40 00          # bd mov ecx, [#]
+ba 02 00 00 00          # c2 mov edx, 2
+cd 80                   # c7 int 0x80
+c3                      # c9 ret
 
-b8 01 00 00 00          # 80 mov eax, 0x1
-bb 06 00 00 00          # 85 mov ebx, 0x05
-cd 80                   # 8a int 0x80 
+# constants             # ca
+23 20
 
 # >>>>>>>>>>>>>>>>>>>>>> ELF END <<<<<<<<<<<<<<<<<<<<<<

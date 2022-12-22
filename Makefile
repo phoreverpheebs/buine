@@ -8,3 +8,6 @@ run: bin/quine
 	./bin/quine
 
 bin/quine: build
+
+clean: bin/
+	rm -rf bin/
