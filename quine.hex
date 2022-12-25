@@ -36,7 +36,7 @@
 80 00 00 00 00 00 00 00 # 48 p_offset: file image offset
 80 00 40 00 00 00 00 00 # 50 p_vaddr: virtual address
 80 00 40 00 00 00 00 00 # 58 p_paddr: physical address
-4c 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
+77 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
 80 08 50 00 00 00 00 00 # 68 p_memsz: size in memory
 00 01 00 00 00 00 00 00 # 70 p_align: segment alignment: 128 bytes
 
@@ -44,35 +44,82 @@
 
 # >>>>>>>>>>>>>>>>>>>>>> PROGRAM SEGMENT <<<<<<<<<<<<<<<<<<<<<<
 
-# buffer: 0x400100
+## use these two buffers for string operations
+# dst (edi): 0x400400
 
 fc                      # 80 cld
+bf 00 04 40 00          # 81 mov edi, 0x400400
+be ea 00 40 00          # 86 mov esi, src
 
-e8 2d 00 00 00          # 81 call +0x32
-b0 3e                   # 86 mov al, 0x3e
-b9 16 00 00 00          # 88 mov ecx, 22
-bf 00 01 40 00          # 8d mov edi, 0x400100
-f3 aa                   # 92 rep stos
+40 b5 0f                # 8b mov bpl, 15
+e8 0c 00 00 00          # 8e call make_title
 
-b8 04 00 00 00          # 94 mov eax, 4
-bb 01 00 00 00          # 99 mov ebx, 1
-b9 00 01 40 00          # 9e mov ecx, 0x400100
-ba 16 00 00 00          # a3 mov edx, 1
-cd 80                   # a8 int 0x80
+b0 0a                   # 93 mov al, '\n'
+aa                      # 95 stosb
 
-b8 01 00 00 00          # aa mov eax, 0x1
-31 db                   # af xor ebx, ebx
-cd 80                   # b1 int 0x80 
+## TODO
+## extra new line loaded in dst buffer
+## fill 62 bytes of edi with 0x20
+## add hex encoded ELF header 
+## '#' at offset 25
+## '00 e_ident[EI_MAG]: ELF magic number'
 
-# start_comment         # b3
-b8 04 00 00 00          # b3 mov eax, 4
-bb 01 00 00 00          # b8 mov ebx, 1
-b9 ca 00 40 00          # bd mov ecx, [#]
-ba 02 00 00 00          # c2 mov edx, 2
-cd 80                   # c7 int 0x80
-c3                      # c9 ret
+# exit
+b8 01 00 00 00          # 96 mov eax, 1
+31 db                   # 9b xor ebx, ebx
+cd 80                   # 9d int 0x80 
 
-# constants             # ca
-23 20
+# make_title (rbp=size, esi=title)
+e8 2d 00 00 00          # 9f call start_comment
+
+## edx is amount of bytes to be written to output from dst
+ba 2f 00 00 00          # a4 mov edx, 46
+01 ea                   # a9 add edx, ebp
+
+b0 3e                   # ab mov al, '>'
+b9 16 00 00 00          # ad mov ecx, 22
+f3 aa                   # b2 rep stos
+
+b0 20                   # b4 mov al, ' '
+
+aa                      # b6 stosb
+87 e9                   # b7 xchg ecx, ebp
+f3 a4                   # b9 rep movs
+aa                      # bb stosb
+
+b0 3c                   # bc mov al, '<'
+b1 16                   # be mov cl, 22
+f3 aa                   # c0 rep stos
+
+b0 0a                   # c2 mov al, \n
+aa                      # c4 stosb
+
+b0 04                   # c5 mov al, 4
+b9 00 04 40 00          # c7 mov ecx, 0x400400
+cd 80                   # cc int 0x80
+
+## restore dst buffer
+01 d7                   # ce sub edi, edx
+
+c3                      # d0 ret
+
+# start_comment
+b8 04 00 00 00          # d1 mov eax, 4
+bb 01 00 00 00          # d6 mov ebx, 1
+b9 e8 00 40 00          # db mov ecx, [#]
+ba 02 00 00 00          # e0 mov edx, 2
+cd 80                   # e5 int 0x80
+c3                      # e7 ret
+
+# constants
+23 20                   # e8 '# '
+
+# src                   # ea
+45 4c 46 20 
+46 49 4c 45 
+20 48 45 41 
+44 45 52
+
+## f9
 
 # >>>>>>>>>>>>>>>>>>>>>> ELF END <<<<<<<<<<<<<<<<<<<<<<

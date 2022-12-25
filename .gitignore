@@ -1,3 +1,5 @@
 quine
 bin/
 periculum/
+tmp*
+backups/
