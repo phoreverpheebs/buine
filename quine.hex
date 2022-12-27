@@ -36,7 +36,7 @@
 80 00 00 00 00 00 00 00 # 48 p_offset: file image offset
 80 00 40 00 00 00 00 00 # 50 p_vaddr: virtual address
 80 00 40 00 00 00 00 00 # 58 p_paddr: physical address
-bb 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
+b7 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
 80 08 50 00 00 00 00 00 # 68 p_memsz: size in memory
 00 01 00 00 00 00 00 00 # 70 p_align: segment alignment: 128 bytes
 
@@ -49,11 +49,11 @@ bb 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
 
 fc                      # 80 cld
 bf 00 04 40 00          # 81 mov edi, 0x00400400
-be 2c 01 40 00          # 86 mov esi, src
+be 28 01 40 00          # 86 mov esi, src
 ## address
 
 40 b5 0f                # 8b mov bpl, 15
-e8 4e 00 00 00          # 8e call make_title
+e8 4f 00 00 00          # 8e call make_title
 ## address
 
 b0 0a                   # 93 mov al, '\n'
@@ -91,31 +91,31 @@ c0 ea 04                # b9 shr dl, 4
 83 e0 0f                # bc and eax, 0x0f
 
 ## hex_table address
-bd ce 00 40 00          # bf mov ebp, 0x004000ce
+bd d2 00 40 00          # bf mov ebp, 0x004000d2
 
 ## maybe swap bh and bl if reversed 4-bit orders
 8a 04 28                # c4 mov al, [eax+ebp]
 8a 24 2a                # c7 mov ah, [edx+ebp]
 
-ab                      # ca stosw
+66 ab                   # ca stosw
 
-b0 20                   # cb mov al, ' '
-aa                      # cd stosb
+b0 20                   # cc mov al, ' '
+aa                      # ce stosb
 
-e2 e4                   # ce loop -28
-c3                      # d0 ret
+e2 e5                   # cf loop
+c3                      # d1 ret
 
 ## hex_table in middle of code bc why not lol
-30 31 32 33 34 35 36 37 # d1 '01234567'
-38 39 61 62 63 64 65 66 # d9 '89abcdef'
+30 31 32 33 34 35 36 37 # d2 '01234567'
+38 39 61 62 63 64 65 66 # da '89abcdef'
 
 ## make_title ## 
-## (rbp=size, esi=title)
-e8 2d 00 00 00          # e1 call start_comment
+## (ebp=size, esi=title)
+31 d2                   # e2 xor edx, edx
+b2 2f                   # e4 mov dl, 46
+01 ea                   # e6 add edx, ebp
 
-## edx is amount of bytes to be written to output from dst
-ba 2f 00 00 00          # e6 mov edx, 46
-01 ea                   # eb add edx, ebp
+e8 22 00 00 00          # e8 call add_comment
 
 b0 3e                   # ed mov al, '>'
 b9 16 00 00 00          # ef mov ecx, 22
@@ -135,32 +135,35 @@ f3 aa                   # 102 rep stos
 b0 0a                   # 104 mov al, '\n'
 aa                      # 106 stosb
 
-b0 04                   # 107 mov al, 4
-b9 00 04 40 00          # 109 mov ecx, 0x400400
-cd 80                   # 10e int 0x80
+29 d7                   # 107 sub edi, edx
 
-## restore dst buffer
-01 d7                   # 110 sub edi, edx
+e8 0d 00 00 00          # 109 call print_edi
 
-c3                      # 112 ret
+c3                      # 10e ret
 
-## start_comment ##
-b8 04 00 00 00          # 113 mov eax, 4
-bb 01 00 00 00          # 118 mov ebx, 1
-b9 2a 01 40 00          # 11d mov ecx, [#]
-## address
-ba 02 00 00 00          # 122 mov edx, 2
-cd 80                   # 127 int 0x80
-c3                      # 129 ret
+## add_comment ##
+## adds '# ' to [edi] 
+## increments edx by 2
+66 b8 23 20             # 10f mov ax, '# '
+66 ab                   # 113 stosw
+31 c0                   # 115 xor eax, eax
+80 c2 02                # 117 add edx, 2
+c3                      # 11a ret
 
-# constants
-23 20                   # 12a '# '
+## print_edi ##
+31 c0                   # 11b xor eax, eax
+b0 04                   # 11d mov al, 4
+31 db                   # 11f xor ebx, ebx
+b3 01                   # 121 mov bl, 1
+89 f9                   # 123 mov ecx, edi
+cd 80                   # 125 int 0x80
+c3                      # 127 ret
 
-# src                   # 12c
+# src                   # 128
 45 4c 46 20 
 46 49 4c 45 
 20 48 45 41 
 44 45 52
-                        # 13b
+                        # 137
 
 # >>>>>>>>>>>>>>>>>>>>>> ELF END <<<<<<<<<<<<<<<<<<<<<<
