@@ -36,7 +36,7 @@
 80 00 00 00 00 00 00 00 # 48 p_offset: file image offset
 80 00 40 00 00 00 00 00 # 50 p_vaddr: virtual address
 80 00 40 00 00 00 00 00 # 58 p_paddr: physical address
-77 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
+bb 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
 80 08 50 00 00 00 00 00 # 68 p_memsz: size in memory
 00 01 00 00 00 00 00 00 # 70 p_align: segment alignment: 128 bytes
 
@@ -48,78 +48,119 @@
 # dst (edi): 0x400400
 
 fc                      # 80 cld
-bf 00 04 40 00          # 81 mov edi, 0x400400
-be ea 00 40 00          # 86 mov esi, src
+bf 00 04 40 00          # 81 mov edi, 0x00400400
+be 2c 01 40 00          # 86 mov esi, src
+## address
 
 40 b5 0f                # 8b mov bpl, 15
-e8 0c 00 00 00          # 8e call make_title
+e8 4e 00 00 00          # 8e call make_title
+## address
 
 b0 0a                   # 93 mov al, '\n'
 aa                      # 95 stosb
 
+be a7 00 40 00          # 96 mov esi, 0x004000a4
+## address
+b9 04 00 00 00          # 9b mov ecx, 4
+e8 0f 00 00 00          # a0 call dec2hex
+## address
+
+eb 04                   # a5 jmp +0x4
+## address
+
+75 45 4c 46             # a7 ELF magic number
+
+## exit ##
+b8 01 00 00 00          # ab mov eax, 1
+31 db                   # b0 xor ebx, ebx
+cd 80                   # b2 int 0x80 
+
 ## TODO
-## extra new line loaded in dst buffer
-## fill 62 bytes of edi with 0x20
-## add hex encoded ELF header 
-## '#' at offset 25
 ## '00 e_ident[EI_MAG]: ELF magic number'
 
-# exit
-b8 01 00 00 00          # 96 mov eax, 1
-31 db                   # 9b xor ebx, ebx
-cd 80                   # 9d int 0x80 
+## dec2hex ## 
+## reads ecx bytes from esi converts 
+## to hex and writes it to edi (with spaces)
 
-# make_title (rbp=size, esi=title)
-e8 2d 00 00 00          # 9f call start_comment
+31 d2                   # b4 xor edx, edx
 
-## edx is amount of bytes to be written to output from dst
-ba 2f 00 00 00          # a4 mov edx, 46
-01 ea                   # a9 add edx, ebp
+ac                      # b6 lodsb
 
-b0 3e                   # ab mov al, '>'
-b9 16 00 00 00          # ad mov ecx, 22
-f3 aa                   # b2 rep stos
+88 c2                   # b7 mov dl, al
+c0 ea 04                # b9 shr dl, 4
+83 e0 0f                # bc and eax, 0x0f
 
-b0 20                   # b4 mov al, ' '
+## hex_table address
+bd ce 00 40 00          # bf mov ebp, 0x004000ce
 
-aa                      # b6 stosb
-87 e9                   # b7 xchg ecx, ebp
-f3 a4                   # b9 rep movs
-aa                      # bb stosb
+## maybe swap bh and bl if reversed 4-bit orders
+8a 04 28                # c4 mov al, [eax+ebp]
+8a 24 2a                # c7 mov ah, [edx+ebp]
 
-b0 3c                   # bc mov al, '<'
-b1 16                   # be mov cl, 22
-f3 aa                   # c0 rep stos
+ab                      # ca stosw
 
-b0 0a                   # c2 mov al, \n
-aa                      # c4 stosb
+b0 20                   # cb mov al, ' '
+aa                      # cd stosb
 
-b0 04                   # c5 mov al, 4
-b9 00 04 40 00          # c7 mov ecx, 0x400400
-cd 80                   # cc int 0x80
-
-## restore dst buffer
-01 d7                   # ce sub edi, edx
-
+e2 e4                   # ce loop -28
 c3                      # d0 ret
 
-# start_comment
-b8 04 00 00 00          # d1 mov eax, 4
-bb 01 00 00 00          # d6 mov ebx, 1
-b9 e8 00 40 00          # db mov ecx, [#]
-ba 02 00 00 00          # e0 mov edx, 2
-cd 80                   # e5 int 0x80
-c3                      # e7 ret
+## hex_table in middle of code bc why not lol
+30 31 32 33 34 35 36 37 # d1 '01234567'
+38 39 61 62 63 64 65 66 # d9 '89abcdef'
+
+## make_title ## 
+## (rbp=size, esi=title)
+e8 2d 00 00 00          # e1 call start_comment
+
+## edx is amount of bytes to be written to output from dst
+ba 2f 00 00 00          # e6 mov edx, 46
+01 ea                   # eb add edx, ebp
+
+b0 3e                   # ed mov al, '>'
+b9 16 00 00 00          # ef mov ecx, 22
+f3 aa                   # f4 rep stos
+
+b0 20                   # f6 mov al, ' '
+
+aa                      # f8 stosb
+87 e9                   # f9 xchg ecx, ebp
+f3 a4                   # fb rep movs
+aa                      # fd stosb
+
+b0 3c                   # fe mov al, '<'
+b1 16                   # 100 mov cl, 22
+f3 aa                   # 102 rep stos
+
+b0 0a                   # 104 mov al, '\n'
+aa                      # 106 stosb
+
+b0 04                   # 107 mov al, 4
+b9 00 04 40 00          # 109 mov ecx, 0x400400
+cd 80                   # 10e int 0x80
+
+## restore dst buffer
+01 d7                   # 110 sub edi, edx
+
+c3                      # 112 ret
+
+## start_comment ##
+b8 04 00 00 00          # 113 mov eax, 4
+bb 01 00 00 00          # 118 mov ebx, 1
+b9 2a 01 40 00          # 11d mov ecx, [#]
+## address
+ba 02 00 00 00          # 122 mov edx, 2
+cd 80                   # 127 int 0x80
+c3                      # 129 ret
 
 # constants
-23 20                   # e8 '# '
+23 20                   # 12a '# '
 
-# src                   # ea
+# src                   # 12c
 45 4c 46 20 
 46 49 4c 45 
 20 48 45 41 
 44 45 52
-
-## f9
+                        # 13b
 
 # >>>>>>>>>>>>>>>>>>>>>> ELF END <<<<<<<<<<<<<<<<<<<<<<
