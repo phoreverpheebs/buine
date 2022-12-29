@@ -36,7 +36,7 @@
 80 00 00 00 00 00 00 00 # 48 p_offset: file image offset
 80 00 40 00 00 00 00 00 # 50 p_vaddr: virtual address
 80 00 40 00 00 00 00 00 # 58 p_paddr: physical address
-b7 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
+c5 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
 80 08 50 00 00 00 00 00 # 68 p_memsz: size in memory
 00 01 00 00 00 00 00 00 # 70 p_align: segment alignment: 128 bytes
 
@@ -49,31 +49,36 @@ b7 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
 
 fc                      # 80 cld
 bf 00 04 40 00          # 81 mov edi, 0x00400400
-be 28 01 40 00          # 86 mov esi, src
+be 36 01 40 00          # 86 mov esi, src
 ## address
 
 40 b5 0f                # 8b mov bpl, 15
-e8 4f 00 00 00          # 8e call make_title
+e8 5d 00 00 00          # 8e call make_title
 ## address
 
 b0 0a                   # 93 mov al, '\n'
 aa                      # 95 stosb
 
-be a7 00 40 00          # 96 mov esi, 0x004000a4
+be a7 00 40 00          # 96 mov esi, 0x004000a7
 ## address
 b9 04 00 00 00          # 9b mov ecx, 4
-e8 0f 00 00 00          # a0 call dec2hex
+e8 1a 00 00 00          # a0 call dec2hex
 ## address
 
 eb 04                   # a5 jmp +0x4
-## address
-
 75 45 4c 46             # a7 ELF magic number
 
+b0 0a                   # ab mov al, '\n'
+aa                      # ad stosb
+
+83 ea 3e                # ae sub edx, 0x3e
+## subtract amount of bytes printed + 2
+e8 71 00 00 00          # b1 call print_edi
+
 ## exit ##
-b8 01 00 00 00          # ab mov eax, 1
-31 db                   # b0 xor ebx, ebx
-cd 80                   # b2 int 0x80 
+b8 01 00 00 00          # b6 mov eax, 1
+31 db                   # bb xor ebx, ebx
+cd 80                   # bd int 0x80 
 
 ## TODO
 ## '00 e_ident[EI_MAG]: ELF magic number'
@@ -81,89 +86,94 @@ cd 80                   # b2 int 0x80
 ## dec2hex ## 
 ## reads ecx bytes from esi converts 
 ## to hex and writes it to edi (with spaces)
+## increments edx for every byte written
 
-31 d2                   # b4 xor edx, edx
+31 c0                   # bf xor eax, eax
 
-ac                      # b6 lodsb
+bd e0 00 40 00          # c1 mov ebp, 0x004000e0
+## address
 
-88 c2                   # b7 mov dl, al
-c0 ea 04                # b9 shr dl, 4
-83 e0 0f                # bc and eax, 0x0f
+ac                      # c6 lodsb
 
-## hex_table address
-bd d2 00 40 00          # bf mov ebp, 0x004000d2
+8b d8                   # c7 mov ebx, eax
 
-## maybe swap bh and bl if reversed 4-bit orders
-8a 04 28                # c4 mov al, [eax+ebp]
-8a 24 2a                # c7 mov ah, [edx+ebp]
+c0 e8 04                # c9 shr al, 4
+8a 04 28                # cc mov al, [eax+ebp]
 
-66 ab                   # ca stosw
+aa                      # cf stosb
 
-b0 20                   # cc mov al, ' '
-aa                      # ce stosb
+80 e3 0f                # d0 and bl, 0x0f
+8a 04 2b                # d3 mov al, [ebx+ebp]
 
-e2 e5                   # cf loop
-c3                      # d1 ret
+aa                      # d6 stosb
 
-## hex_table in middle of code bc why not lol
-30 31 32 33 34 35 36 37 # d2 '01234567'
-38 39 61 62 63 64 65 66 # da '89abcdef'
+b0 20                   # d7 mov al, ' '
+aa                      # d9 stosb
+
+83 c2 03                # da add edx, 3
+e2 e7                   # dd loop
+
+c3                      # df ret
+
+## hex_table in middle of 
+## code bc why not lol
+30 31 32 33 34 35 36 37 # e0 '01234567'
+38 39 61 62 63 64 65 66 # e8 '89abcdef'
 
 ## make_title ## 
 ## (ebp=size, esi=title)
-31 d2                   # e2 xor edx, edx
-b2 2f                   # e4 mov dl, 46
-01 ea                   # e6 add edx, ebp
+31 d2                   # f0 xor edx, edx
+b2 2f                   # f2 mov dl, 46
+01 ea                   # f4 add edx, ebp
 
-e8 22 00 00 00          # e8 call add_comment
+e8 20 00 00 00          # f6 call add_comment
 
-b0 3e                   # ed mov al, '>'
-b9 16 00 00 00          # ef mov ecx, 22
-f3 aa                   # f4 rep stos
-
-b0 20                   # f6 mov al, ' '
-
-aa                      # f8 stosb
-87 e9                   # f9 xchg ecx, ebp
-f3 a4                   # fb rep movs
-aa                      # fd stosb
-
-b0 3c                   # fe mov al, '<'
-b1 16                   # 100 mov cl, 22
+b0 3e                   # fb mov al, '>'
+b9 16 00 00 00          # fd mov ecx, 22
 f3 aa                   # 102 rep stos
 
-b0 0a                   # 104 mov al, '\n'
+b0 20                   # 104 mov al, ' '
+
 aa                      # 106 stosb
+87 e9                   # 107 xchg ecx, ebp
+f3 a4                   # 109 rep movs
+aa                      # 10b stosb
 
-29 d7                   # 107 sub edi, edx
+b0 3c                   # 10c mov al, '<'
+b1 16                   # 10e mov cl, 22
+f3 aa                   # 110 rep stos
 
-e8 0d 00 00 00          # 109 call print_edi
+b0 0a                   # 112 mov al, '\n'
+aa                      # 114 stosb
 
-c3                      # 10e ret
+e8 0d 00 00 00          # 115 call print_edi
+
+c3                      # 11a ret
 
 ## add_comment ##
 ## adds '# ' to [edi] 
 ## increments edx by 2
-66 b8 23 20             # 10f mov ax, '# '
-66 ab                   # 113 stosw
-31 c0                   # 115 xor eax, eax
-80 c2 02                # 117 add edx, 2
-c3                      # 11a ret
+66 b8 23 20             # 11b mov ax, '# '
+66 ab                   # 11f stosw
+31 c0                   # 121 xor eax, eax
+80 c2 02                # 123 add edx, 2
+c3                      # 126 ret
 
 ## print_edi ##
-31 c0                   # 11b xor eax, eax
-b0 04                   # 11d mov al, 4
-31 db                   # 11f xor ebx, ebx
-b3 01                   # 121 mov bl, 1
-89 f9                   # 123 mov ecx, edi
-cd 80                   # 125 int 0x80
-c3                      # 127 ret
+29 d7                   # 127 sub edi, edx
+31 c0                   # 129 xor eax, eax
+b0 04                   # 12b mov al, 4
+31 db                   # 12d xor ebx, ebx
+b3 01                   # 12f mov bl, 1
+89 f9                   # 131 mov ecx, edi
+cd 80                   # 133 int 0x80
+c3                      # 135 ret
 
-# src                   # 128
+# src                   # 136
 45 4c 46 20 
 46 49 4c 45 
 20 48 45 41 
 44 45 52
-                        # 137
+                        # 145
 
 # >>>>>>>>>>>>>>>>>>>>>> ELF END <<<<<<<<<<<<<<<<<<<<<<
