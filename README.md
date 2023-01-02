@@ -17,6 +17,22 @@ but to also output the comments written within; these comments aim to
 explain each byte, so that anyone looking into the file can understand
 what the meaning of each byte is.
 
+# Syntax
+
+Despite the `.hex` extension, this file does not follow the Intel Hex
+syntax.
+
+* A comment is denoted by a `#`, the Makefile removes all comments before
+converting the hexadecimal characters to binary, though the file still outputs
+these comments, as I wanted it to be part of the challenge.
+* `##` is what I used to denote a "temporary" comment, in other words a comment
+which is not intended to be present in the final version of `buine` and therefore
+comments that won't be _quined_. Once the project is in its final stage, these
+"temporary" comments shouldn't be present, although venturing into older commits,
+you may stumble upon a few.
+* Everything else in the file (before comment characters) should be a two character
+hexadecimal value (decoded to a single byte).
+
 # References and other cool binary stuff!
 
 I can't stress how many times I referenced 
