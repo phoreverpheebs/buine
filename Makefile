@@ -1,14 +1,14 @@
 MAKEFLAGS += --silent
 
-build: quine.hex
+build: buine.hex
 	@mkdir -p bin
-	cut -d'#' -f1 <quine.hex | xxd -p -r > ./bin/quine
-	chmod +x ./bin/quine
+	cut -d'#' -f1 <buine.hex | xxd -p -r > ./bin/buine
+	chmod +x ./bin/buine
 
 run: build
-	./bin/quine
+	./bin/buine
 
-bin/quine: build
+bin/buine: build
 
 clean: bin/
 	rm -rf bin/
