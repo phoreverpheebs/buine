@@ -45,7 +45,7 @@ c5 00 00 00 00 00 00 00 # 60 p_filesz: size in file image
 # >>>>>>>>>>>>>>>>>>>>>> PROGRAM SEGMENT <<<<<<<<<<<<<<<<<<<<<<
 
 ## use these two buffers for string operations
-# dst (edi): 0x400400
+## dst (edi): 0x400400
 
 fc                      # 80 cld
 bf 00 04 40 00          # 81 mov edi, 0x00400400

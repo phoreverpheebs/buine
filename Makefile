@@ -1,14 +1,20 @@
 MAKEFLAGS += --silent
+BIN_DIR = bin/
+EXE = buine
+OUT = $(BIN_DIR)$(EXE)
 
-build: buine.hex
-	@mkdir -p bin
-	cut -d'#' -f1 <buine.hex | xxd -p -r > ./bin/buine
-	chmod +x ./bin/buine
+.PHONY: all
+all: $(OUT)
 
-run: build
-	./bin/buine
+$(BIN_DIR)$(EXE): $(EXE).hex $(BIN_DIR)
+	cut -d'#' -f1 < $< | xxd -p -r > ./$@
+	chmod +x $@
+	
+$(BIN_DIR):
+	-mkdir -p bin
 
-bin/buine: build
+run: $(OUT)
+	./$(OUT)
 
-clean: bin/
-	rm -rf bin/
+clean: $(BIN_DIR)
+	rm -rf $<
