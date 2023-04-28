@@ -9,20 +9,23 @@ my $run;
 my $bindir = "./bin/";
 
 # has argument
-if ($#ARGV == 0) {
-    my $target = $ARGV[0];
-    my @helpcmds = ["h", "-h", "help", "--help"];
+while (scalar(@ARGV)) {
+    my $target = shift @ARGV;
+    my @help_cmds = ("h", "-h", "help", "--help");
     if ($target eq "clean" || $target eq "c") {
         remove_tree($bindir);
-        print "Removed $bindir";
+        print "Removed $bindir\n";
         exit 0;
     } elsif ($target eq "run" || $target eq "r") {
         $run = 1;
-    } elsif (grep(/^$target$/, @helpcmds)) {
+    } elsif (grep(/^$target$/, @help_cmds)) {
         print "run - builds and runs buine\n";
         print "clean - removes the output directory\n";
         print "build - builds buine (no argument does the same)\n";
         print "help - prints this help message\n";
+        exit 0;
+    } else {
+        print "Unknown command: $target\n";
     }
 }
 
